@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # raiz = src/
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # raiz
 
 import json
 
@@ -14,11 +14,11 @@ from trulens.dashboard import run_dashboard
 from trulens.otel.semconv.trace import SpanAttributes
 from trulens.providers.langchain import Langchain
 
-from agents.graph import graph_builder
-from agents.state import initial_state
-from agents.utils import format_final_response
-from config import GRAPH_RECURSION_LIMIT, validate_config
-from retrieval.hybrid import HybridRetriever
+from src.agents.graph import graph_builder
+from src.agents.state import initial_state
+from src.agents.utils import format_final_response
+from src.config import GRAPH_RECURSION_LIMIT, validate_config
+from src.retrieval.hybrid import HybridRetriever
 
 PERGUNTAS_PATH = Path(__file__).resolve().parent / "perguntas.jsonl"
 

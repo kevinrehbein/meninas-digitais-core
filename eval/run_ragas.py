@@ -12,7 +12,7 @@ import json
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # raiz = src/
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # raiz
 
 import pandas as pd
 import requests
@@ -27,9 +27,9 @@ from ragas.metrics.collections import (
     Faithfulness,
 )
 
-from agents.utils import message_text
-from config import validate_config
-from retrieval.hybrid import HybridRetriever
+from src.agents.utils import message_text
+from src.config import validate_config
+from src.retrieval.hybrid import HybridRetriever
 
 ROOT = Path(__file__).resolve().parent
 

@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pymupdf4llm
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 RAW_DIR = ROOT / "data" / "raw_pdfs"
 OUTPUT_DIR = ROOT / "data" / "markdowns"
 

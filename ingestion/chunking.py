@@ -4,7 +4,7 @@ from pathlib import Path
 
 from langchain_text_splitters import Language, RecursiveCharacterTextSplitter
 
-ROOT_PATH = Path(__file__).resolve().parents[2]
+ROOT_PATH = Path(__file__).resolve().parents[1]
 MARKDOWNS_PATH = ROOT_PATH / "data" / "markdowns"
 METADATA_PATH = ROOT_PATH / "data" / "metadata.json"
 

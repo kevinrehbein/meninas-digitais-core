@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 
 WEB_SCRAP = True
 BAIXAR = True
-RAIZ = Path(__file__).resolve().parents[2]
+RAIZ = Path(__file__).resolve().parents[1]
 OUTPUT_DIR = RAIZ / "data" / "raw_pdfs"
 METADADOS = RAIZ / "data" / "metadata.json"
 OUTPUT_DIR.mkdir(exist_ok=True)
