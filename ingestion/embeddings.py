@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from langchain_neo4j import Neo4jGraph
 from tenacity import retry, stop_after_attempt, wait_exponential_jitter
 
-from retrieval.embedding_model import DIM, get_embeddings
+from src.retrieval.embedding_model import DIM, get_embeddings
 
 LOTE = 16
 

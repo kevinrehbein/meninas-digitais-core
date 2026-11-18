@@ -3,7 +3,7 @@ import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
-from chunking import chunks
+from .chunking import chunks
 from dotenv import load_dotenv
 from langchain.chat_models import init_chat_model
 from langchain.rate_limiters import InMemoryRateLimiter

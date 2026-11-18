@@ -3,7 +3,7 @@ import unicodedata
 from collections import defaultdict
 from pathlib import Path
 
-from config import NEO4J_PASSWORD, NEO4J_URI, NEO4J_USERNAME
+from src.config import NEO4J_PASSWORD, NEO4J_URI, NEO4J_USERNAME
 from neo4j import GraphDatabase
 
 LABEL = "__Entity__"
