@@ -26,9 +26,7 @@ MAX_RELACOES = 20
 
 # --- Limites do grafo de agentes ---
 MAX_ITERATIONS = 3  # passagens pelo verificador (todos os ciclos de correção somados)
-MAX_PLAN_STEPS = (
-    3  # passos de pesquisa gerados pelo decompositor / pedidos pelo verificador
-)
+MAX_PLAN_STEPS = 3  # passos de pesquisa gerados pelo decompositor / pedidos pelo verificador)
 MAX_TOOL_CALLS = 3  # ferramentas chamadas em paralelo por rodada
 
 GRAPH_RECURSION_LIMIT = 100
