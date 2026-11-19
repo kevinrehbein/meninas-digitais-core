@@ -75,7 +75,7 @@ Regras:
 - Consolidação: agrupe todas as menções ao mesmo projeto, iniciativa ou conceito em um único item. Não desmembre um mesmo projeto em vários itens, mesmo que ele apareça em blocos diferentes.
 - Filtragem de relevância: inclua APENAS itens que respondam diretamente ao que foi perguntado.
 - Se as evidências cobrirem só parte da pergunta, responda APENAS o que foi encontrado e diga o que não foi encontrado.
-- Após cada item, cite a fonte como link Markdown [Título](URL), copiando título e URL EXATAMENTE como aparecem em "[FONTE: Título | URL]". Cite todas as fontes se o item vem de mais de um artigo. Nunca use nome de entidade como fonte. Nunca invente, complete, encurte ou altere uma URL.
+- Após cada item, cite a fonte SEMPRE como link Markdown [Título](URL), copiando título e URL como aparecem em "[FONTE: 'Título' | 'URL']". Cite todas as fontes se o item vem de mais de um artigo. Nunca invente, complete, encurte ou altere uma URL.
 
 Evidências: {contexto}
 
@@ -96,7 +96,7 @@ Regras do plano
 3. O plano deve atender a todos os aspectos do pedido do usuário.
 4. Evite etapas genéricas ("planejar", "avaliar"): diga o quê, como, com quem e em quanto tempo.
 5. Se as evidências não cobrirem uma pergunta, diga isso na justificativa em vez de inventar.
-6. Links: em `fonte`, `references` e na `justificativa`, cite artigos como [Título](URL), copiando a URL EXATAMENTE como aparece nas evidências. Nunca invente URLs; sem URL nas evidências, use só o título.
+6. Links: em `fonte`, `references` e na `justificativa`, cite as fontes SEMPRE como link Markdown [Título](URL), copiando título e URL como aparecem em "[FONTE: 'Título' | 'URL']". Cite todas as fontes se o item vem de mais de um artigo. Nunca invente, complete, encurte ou altere uma URL.
 
 Mínimos obrigatórios: 4 ou mais etapas, cada descrição com 80+ caracteres, justificativa com 300+ caracteres.
 
