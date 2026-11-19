@@ -13,8 +13,8 @@ from .utils import (
 )
 
 _INSTRUCTIONS = {
-    "qa": "Escreva uma resposta curta e direta respondendo exatamente o que foi perguntado.",
-    "sintese": "Escreva uma síntese acadêmica detalhada, separada por seções (Markdown) e cite as fontes.",
+    "qa": "Responda exatamente o que foi perguntado. Se a pergunta pedir uma listagem, liste todos os itens relevantes, consolidados; caso contrário, seja direto.",
+    "sintese": "Escreva uma síntese acadêmica separada por seções (Markdown), cobrindo todos os itens relevantes consolidados e citando as fontes.",
 }
 
 
