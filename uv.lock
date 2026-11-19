@@ -35,7 +35,6 @@ dependencies = [
     { name = "pillow" },
     { name = "pymupdf" },
     { name = "pymupdf4llm" },
-    { name = "pytest" },
     { name = "python-dotenv" },
     { name = "ragas" },
     { name = "streamlit" },
@@ -50,6 +49,11 @@ dev = [
     { name = "pytest" },
     { name = "pytest-xdist" },
     { name = "ruff" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pytest" },
 ]
 
 [package.metadata]
@@ -69,7 +73,6 @@ requires-dist = [
     { name = "pymupdf", specifier = ">=2.0" },
     { name = "pymupdf4llm", specifier = ">=2.0" },
     { name = "pyright", marker = "extra == 'dev'" },
-    { name = "pytest", specifier = ">=9.1.1" },
     { name = "pytest", marker = "extra == 'dev'" },
     { name = "pytest-xdist", marker = "extra == 'dev'" },
     { name = "python-dotenv", specifier = ">=1.1.0" },
@@ -81,6 +84,9 @@ requires-dist = [
     { name = "trulens-providers-langchain", specifier = ">=2.16.0" },
 ]
 provides-extras = ["dev"]
+
+[package.metadata.requires-dev]
+dev = [{ name = "pytest", specifier = ">=9.1.1" }]
 
 [[package]]
 name = "aiohappyeyeballs"

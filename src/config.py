@@ -13,6 +13,7 @@ OUTPUT_DIR = ROOT_DIR / "data" / "outputs"
 NEO4J_URI = os.getenv("NEO4J_URI")
 NEO4J_USERNAME = os.getenv("NEO4J_USERNAME")
 NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD")
+NEO4J_DATABASE = os.getenv("NEO4J_DATABASE")
 
 # --- Hiperparâmetros GraphRAG ---
 TOP_K = 10
@@ -32,7 +33,7 @@ MAX_TOOL_CALLS = 3  # ferramentas chamadas em paralelo por rodada
 
 GRAPH_RECURSION_LIMIT = 100
 MAX_QUESTION_CHARS = 2000
-EVIDENCE_CHAR_LIMIT = 24000  # teto de evidências enviadas ao LLM (custo/latência)
+EVIDENCE_CHAR_LIMIT = 90000  # teto de evidências enviadas ao LLM (custo/latência)
 TOOL_ERROR = "Erro ao consultar a base do WIT. Tente reformular a busca."
 WRITER_TEMPERATURE = 0.3
 
@@ -41,23 +42,23 @@ EMBEDDING_SPACE = os.getenv("EMBEDDING_SPACE")
 
 
 LLM_CHAIN: list[tuple[str, str]] = [
-    # Alta Velocidade
-    ("google_genai", "gemma-4-26b-a4b-it"),
     ("google_genai", "gemini-3.5-flash-lite"),
     ("google_genai", "gemini-3.1-flash-lite"),
-    ("google_genai", "gemma-4-31b-it"),
     ("google_genai", "gemini-2.5-flash-lite"),
-    ("groq", "openai/gpt-oss-20b"),
+    ("google_genai", "gemma-4-26b-a4b-it"),
+    ("google_genai", "gemma-4-31b-it"),
+    ("google_genai", "gemini-4-hydrogen"),
+    ("google_genai", "gemini-3.8-flash"),
+    ("google_genai", "gemini-3.6-flash"),
+    ("google_genai", "gemini-3-flash-preview"),
+    ("google_genai", "gemini-2.5-flash"),
     ("groq", "qwen/qwen3.8-27b"),
-    # Último Recurso)
-    ("openrouter", "google/gemma-4-26b-a4b-it:free"),
-    ("openrouter", "google/gemma-4-31b-it:free"),
+    ("groq", "openai/gpt-oss-20b"),
     ("groq", "openai/gpt-oss-120b"),
 ]
 
 PROVIDER_API_KEYS: dict[str, str] = {
     "google_genai": "GOOGLE_API_KEY",
-    "openrouter": "OPENROUTER_API_KEY",
     "groq": "GROQ_API_KEY",
 }
 
@@ -68,6 +69,7 @@ def validate_config() -> None:
         "NEO4J_URI": NEO4J_URI,
         "NEO4J_USERNAME": NEO4J_USERNAME,
         "NEO4J_PASSWORD": NEO4J_PASSWORD,
+        "NEO4J_DATABASE": NEO4J_DATABASE,
         "EMBEDDING_SPACE": EMBEDDING_SPACE,
     }
     missing = [name for name, value in required.items() if not value]

@@ -16,11 +16,13 @@ from .embedding_model import SpaceEmbeddings
 
 logger = logging.getLogger(__name__)
 
+Fonte = tuple[str | None, str | None]  # (titulo, url)
+
 
 class HybridRetriever:
     """GraphRAG: busca vetorial em chunks/entidades + expansão por relações do grafo."""
 
-    _instance: "HybridRetriever | None" = None  # noqa: UP037
+    _instance: "HybridRetriever | None" = None
     _lock = threading.Lock()
 
     def __init__(self) -> None:
@@ -28,7 +30,7 @@ class HybridRetriever:
         self.graph = get_graph()
 
     @classmethod
-    def get_instance(cls) -> "HybridRetriever":  # noqa: UP037
+    def get_instance(cls) -> "HybridRetriever":
         """Singleton thread-safe: evita recarregar o BGE-M3 a cada chamada."""
         if cls._instance is None:
             with cls._lock:
@@ -93,7 +95,7 @@ class HybridRetriever:
             },
         )
 
-    def _fontes_fallback(self, eids: set[str]) -> dict[str, list[str]]:
+    def _fontes_fallback(self, eids: set[str]) -> dict[str, list[Fonte]]:
         """Artigo que mais menciona cada entidade (usado só como fallback)."""
         rows = self.graph.query(
             """
@@ -101,17 +103,17 @@ class HybridRetriever:
             MATCH (x:__Entity__) WHERE elementId(x) = eid
             MATCH (d:Document)-[:MENTIONS]->(x)
             MATCH (d)-[:PARTE_DE]->(a:Artigo)
-            WITH eid, a.titulo AS titulo, count(*) AS n
+            WITH eid, a.titulo AS titulo, a.url_artigo as url, count(*) AS n
             ORDER BY n DESC
-            RETURN eid, collect(titulo)[..1] AS titulos
+            RETURN eid, collect({titulo: titulo, url: url})[..2] AS fontes
             """,
             {"eids": list(eids)},
         )
-        return {r["eid"]: r["titulos"] for r in rows}
+        return {r["eid"]: [(f["titulo"], f["url"]) for f in r["fontes"]] for r in rows}
 
     def _fontes_das_relacoes(
         self, relacoes: list[dict]
-    ) -> dict[tuple[str, str], list[str]]:
+    ) -> dict[tuple[str, str], list[Fonte]]:
         """Fonte de cada tripla (eid_origem, eid_destino) -> títulos de artigos.
 
         1) Artigos com chunk que menciona AMBAS as entidades (comprovam a tripla).
@@ -128,15 +130,18 @@ class HybridRetriever:
             CALL (o, d) {
                 MATCH (o)<-[:MENTIONS]-(c:Document)-[:MENTIONS]->(d)
                 MATCH (c)-[:PARTE_DE]->(a:Artigo)
-                WITH a.titulo AS titulo, count(*) AS n
+                WITH a.titulo AS titulo, a.url_artigo AS url, count(*) AS n
                 ORDER BY n DESC
-                RETURN collect(titulo)[..3] AS titulos
+                RETURN collect({titulo: titulo, url: url})[..2] AS fontes
             }
-            RETURN par[0] AS eo, par[1] AS ed, titulos
+            RETURN par[0] AS eo, par[1] AS ed, fontes
             """,
             {"pares": [list(p) for p in pares]},
         )
-        fontes = {(r["eo"], r["ed"]): r["titulos"] for r in rows}
+        fontes: dict[tuple[str, str], list[Fonte]] = {
+            (r["eo"], r["ed"]): [(f["titulo"], f["url"]) for f in r["fontes"]]
+            for r in rows
+        }
 
         sem_comum = [p for p in pares if not fontes.get(p)]
         if sem_comum:
@@ -159,17 +164,23 @@ class HybridRetriever:
         return saida
 
     @staticmethod
+    def _formatar_fonte(titulo: str | None, url: str | None) -> str:
+        return f"[FONTE: {titulo or 'Sem título'} | {url or ''}]"
+
+    @staticmethod
     def _formatar_relacoes(
         nos_entrada: list[dict],
         relacoes: list[dict],
-        fontes: dict[tuple[str, str], list[str]] | None = None,
+        fontes: dict[tuple[str, str], list[Fonte]] | None = None,
     ) -> str:
         if not relacoes:
             return ""
         fontes = fontes or {}
 
         # Entidades únicas: sementes primeiro (ordem do índice), depois vizinhas.
-        eids_com_relacao = {r["eid_origem"] for r in relacoes} | {r["eid_destino"] for r in relacoes}
+        eids_com_relacao = {r["eid_origem"] for r in relacoes} | {
+            r["eid_destino"] for r in relacoes
+        }
         entidades = {
             e["eid"]: (e["nome"], e.get("descricao", ""))
             for e in nos_entrada
@@ -183,9 +194,11 @@ class HybridRetriever:
             entidades.setdefault(ed, (r["destino"], r["desc_destino"]))
 
             linha = f"({r['origem']}) -[{r['rel']}]-> ({r['destino']})"
-            titulos = fontes.get((eo, ed), [])
-            if titulos:
-                linha += " | " + " ".join(f"[FONTE: {t}]" for t in titulos)
+            fontes_tripla = fontes.get((eo, ed), [])
+            if fontes_tripla:
+                linha += " | " + " ".join(
+                    HybridRetriever._formatar_fonte(t, u) for t, u in fontes_tripla
+                )
             triplas.append(linha)
 
         linhas_ent = [
@@ -199,15 +212,14 @@ class HybridRetriever:
             + "\n".join(dict.fromkeys(triplas))  # remove triplas idênticas
             + "\n\n"
         )
- 
+
     @staticmethod
     def formatar_chunk(c: dict) -> str:
-        """Formata um único chunk (fonte única de verdade, usada também na avaliação)."""
         return (
-            f"[FONTE: {c.get('titulo') or 'Sem título'} | {c.get('url') or ''}]\n"
+            f"{HybridRetriever._formatar_fonte(c.get('titulo'), c.get('url'))}\n"
             f"{c['texto']}"
         ).rstrip()
- 
+
     @staticmethod
     def _formatar_chunks(chunks: list[dict]) -> str:
         if not chunks:
@@ -222,7 +234,9 @@ class HybridRetriever:
             return ""
 
         relacoes = self._relacoes_do_grafo(nos, vec)
-        return self._formatar_relacoes(nos, relacoes, self._fontes_das_relacoes(relacoes))
+        return self._formatar_relacoes(
+            nos, relacoes, self._fontes_das_relacoes(relacoes)
+        )
 
     def recuperar_contexto(self, pergunta: str, um_por_artigo: bool = False) -> str:
         """Pipeline GraphRAG: retorna o contexto formatado para o LLM."""
@@ -232,4 +246,4 @@ class HybridRetriever:
         if um_por_artigo:
             chunks = self._filtrar_um_por_artigo(chunks)
 
-        return self._formatar_chunks(chunks) + "\n\n" + self.bloco_grafo(vec)
+        return self.bloco_grafo(vec) + "\n\n" + self._formatar_chunks(chunks)
