@@ -8,7 +8,7 @@ import pytest
 import config
 from retrieval import connection
 
-REQUIRED = ["NEO4J_URI", "NEO4J_USERNAME", "NEO4J_PASSWORD", "EMBEDDING_SPACE"]
+REQUIRED = ["NEO4J_URI", "NEO4J_USERNAME", "NEO4J_DATABASE", "NEO4J_PASSWORD", "EMBEDDING_SPACE"]
 
 
 class TestValidateConfig:
