@@ -2,7 +2,7 @@ import threading
 
 from langchain_neo4j import Neo4jGraph
 
-from config import NEO4J_PASSWORD, NEO4J_URI, NEO4J_USERNAME
+from config import NEO4J_PASSWORD, NEO4J_URI, NEO4J_USERNAME, NEO4J_DATABASE
 
 _graph: Neo4jGraph | None = None
 _lock = threading.Lock()
@@ -17,6 +17,7 @@ def get_graph() -> Neo4jGraph:
                 _graph = Neo4jGraph(
                     url=NEO4J_URI,
                     username=NEO4J_USERNAME,
+                    database=NEO4J_DATABASE,
                     password=NEO4J_PASSWORD,
                     refresh_schema=False,  # não usamos o schema; evita custo/APOC na inicialização
                 )
