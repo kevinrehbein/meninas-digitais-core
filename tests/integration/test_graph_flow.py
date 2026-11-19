@@ -145,7 +145,7 @@ class TestCicloDeCorrecao:
         assert result["final_response"] == "síntese longa"
         segundo_supervisor = fake_llms.prompts["SupervisorDecision"][1]
         assert "Escopo errado: pedia panorama" in segundo_supervisor
-        assert "curta e direta" in fake_llms.prompts["writer"][0]
+        assert "redator" in fake_llms.prompts["writer"][0]
         assert "síntese acadêmica" in fake_llms.prompts["writer"][1]
         fake_llms.assert_exhausted()
 

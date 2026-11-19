@@ -90,7 +90,8 @@ addopts = "-ra -s --color=yes --tb=short"
 pythonpath = ["src"]
 testpaths = ["tests"]
 markers = [
-    "integration: testes que dependem de serviços externos, como Neo4j e Hugging Face",
+    "integration: testes de integração",
+    "live: testes de integração que acessam serviços externos reais (Neo4j e Embeddings)",
 ]
 
 [build-system]

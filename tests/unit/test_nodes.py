@@ -163,7 +163,7 @@ class TestRedator:
         out = redator_node(self._state(intent="qa"))
         assert out == {"draft": "Resposta"}
         prompt = fake_llms.prompts["writer"][0]
-        assert "curta e direta" in prompt
+        assert "redator" in prompt
         assert "EVIDENCIA-1" in prompt
         assert "Qual a pergunta?" in prompt
 
@@ -175,7 +175,7 @@ class TestRedator:
     def test_sem_intencao_assume_qa(self, fake_llms):
         fake_llms.writer_outputs.append("Texto")
         redator_node(self._state(intent=None))
-        assert "curta e direta" in fake_llms.prompts["writer"][0]
+        assert "redator" in fake_llms.prompts["writer"][0]
 
     def test_feedback_gera_alerta_de_revisao(self, fake_llms):
         fake_llms.writer_outputs.append("Texto")
