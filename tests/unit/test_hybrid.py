@@ -71,18 +71,18 @@ class TestFiltrarUmPorArtigo:
 class TestFormatacao:
     def test_formatar_chunk(self):
         c = {"titulo": "Art", "url": "https://a", "texto": "corpo"}
-        assert HybridRetriever.formatar_chunk(c) == "[FONTE: Art | https://a]\ncorpo"
+        assert HybridRetriever.formatar_chunk(c) == "FONTE: [Art](https://a)\ncorpo"
 
     def test_formatar_chunk_sem_titulo_e_url(self):
         c = {"titulo": None, "url": None, "texto": ""}
-        assert HybridRetriever.formatar_chunk(c) == "[FONTE: Sem título | ]"
+        assert HybridRetriever.formatar_chunk(c) == "FONTE: [Sem título]()"
 
     def test_formatar_chunks_vazio(self):
         assert HybridRetriever._formatar_chunks([]) == ""
 
     def test_formatar_chunks_com_cabecalho(self):
         out = HybridRetriever._formatar_chunks([{"titulo": "A", "url": "u", "texto": "t"}])
-        assert out.startswith("=== TRECHOS DE ARTIGOS (CHUNKS) ===\n[FONTE: A | u]")
+        assert out.startswith("=== TRECHOS DE ARTIGOS (CHUNKS) ===\nFONTE: [A](u)")
 
     def test_relacoes_vazias(self):
         assert HybridRetriever._formatar_relacoes([], []) == ""
@@ -99,11 +99,11 @@ class TestFormatacao:
         assert "- Mentoria: Desc M" in out
         assert "- Meninas\n" in out  # sem descrição, sem ":"
         assert "Solta" not in out
-        assert "(Mentoria) -[APOIA]-> (Meninas) | [FONTE: Artigo X | https://x]" in out
+        assert "(Mentoria) -[APOIA]-> (Meninas) | FONTE: [Artigo X](https://x)" in out
 
     def test_varias_fontes_na_mesma_tripla(self):
         out = HybridRetriever._formatar_relacoes([], [rel()], {("e1", "e2"): [("A", "u1"), ("B", "u2")]})
-        assert "[FONTE: A | u1] [FONTE: B | u2]" in out
+        assert "FONTE: [A](u1) FONTE: [B](u2)" in out
 
     def test_triplas_identicas_sao_deduplicadas(self):
         out = HybridRetriever._formatar_relacoes([], [rel(), rel()])
@@ -111,13 +111,13 @@ class TestFormatacao:
 
     def test_tripla_sem_fonte_nao_tem_marcador(self):
         out = HybridRetriever._formatar_relacoes([], [rel()])
-        assert "[FONTE" not in out
+        assert "FONTE: [" not in out
 
     def test_formatar_fonte(self):
-        assert HybridRetriever._formatar_fonte("Art", "https://a") == "[FONTE: Art | https://a]"
+        assert HybridRetriever._formatar_fonte("Art", "https://a") == "FONTE: [Art](https://a)"
 
     def test_formatar_fonte_com_campos_ausentes(self):
-        assert HybridRetriever._formatar_fonte(None, None) == "[FONTE: Sem título | ]"
+        assert HybridRetriever._formatar_fonte(None, None) == "FONTE: [Sem título]()"
 
 
 class TestFontesDasRelacoes:
@@ -175,7 +175,7 @@ class TestBlocoGrafo:
 
         out = retriever.bloco_grafo([0.1])
 
-        assert "(Mentoria) -[APOIA]-> (Meninas) | [FONTE: Art A | https://a]" in out
+        assert "(Mentoria) -[APOIA]-> (Meninas) | FONTE: [Art A](https://a)" in out
         seeds_params = retriever.graph.called("UNWIND $seeds")[0]
         assert seeds_params["seeds"][0]["eid"] == "e1"
 

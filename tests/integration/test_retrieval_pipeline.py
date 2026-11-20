@@ -62,12 +62,12 @@ class TestPesquisarContextoWitComGrafo:
     def test_contexto_completo_com_chunks_entidades_e_triplas(self, graphrag):
         out = pesquisar_contexto_wit.invoke({"pergunta": "robótica para meninas"})
 
-        assert "[FONTE: Robótica na escola | https://wit.example/robotica]" in out
+        assert "FONTE: [Robótica na escola](https://wit.example/robotica)" in out
         assert "Oficinas de robótica para meninas." in out
         assert "- Robótica: Área da computação" in out
         assert (
             "(Robótica) -[APLICADA_EM]-> (Ensino médio) "
-            "| [FONTE: Robótica na escola | https://wit.example/robotica]"
+            "| FONTE: [Robótica na escola](https://wit.example/robotica)"
         ) in out
 
     def test_hiperparametros_do_config_chegam_ao_cypher(self, graphrag):
@@ -84,7 +84,7 @@ class TestPesquisarContextoWitComGrafo:
         # os chunks agora vêm depois do grafo
         chunks = out.split("=== TRECHOS DE ARTIGOS (CHUNKS) ===")[1]
 
-        assert chunks.count("[FONTE: Robótica na escola | https://wit.example/robotica]") == 1
+        assert chunks.count("FONTE: [Robótica na escola](https://wit.example/robotica)") == 1
         assert "Resultados da oficina." not in chunks
         assert "Mentoria entre pares." in chunks
 
@@ -115,7 +115,7 @@ class TestFerramentasDeConsultaEstruturada:
         ]
         out = buscar_projetos_semelhantes.invoke({"palavras_chave": ["Mentoria", "Meninas na Computação"]})
 
-        assert "[FONTE: Projeto P | https://wit.example/p]" in out
+        assert "FONTE: [Projeto P](https://wit.example/p)" in out
         assert "Temas em comum: mentoria, meninas (aderência: 2)" in out
         params = graph.called("count(DISTINCT e) AS aderencia")[0]
         assert params["kws"] == ["mentoria", "meninas na computacao"]
@@ -127,7 +127,7 @@ class TestFerramentasDeConsultaEstruturada:
         ]
         out = artigos_do_autor.invoke({"nome": "Laura Jurgina"})
 
-        assert out.count("[FONTE:") == 2
+        assert out.count("FONTE: [") == 2
         assert "Autor(a): Laura Jurgina" in out
         assert graph.called("collect(DISTINCT {titulo")[0]["tokens"] == ["laura", "jurgina"]
 
@@ -140,7 +140,7 @@ class TestFerramentasDeConsultaEstruturada:
             {"titulo": "Robótica na escola", "url": "https://r", "autores": ["Ana", "Bia"]}
         ]
         out = autores_do_artigo.invoke({"titulo": "Robótica na escola"})
-        assert out == "[FONTE: Robótica na escola | https://r]\nAutores: Ana, Bia"
+        assert out == "FONTE: [Robótica na escola](https://r)\nAutores: Ana, Bia"
 
     def test_erro_de_consulta_vira_tool_error(self, graph):
         graph.routes["collect(au.nome) AS autores"] = RuntimeError("timeout")

@@ -17,14 +17,14 @@ class TestFontes:
     def test_formata_bloco_por_item(self):
         out = _fontes([("Título A", "https://a", "corpo A"), ("Título B", "https://b", "corpo B")])
         assert out == (
-            "[FONTE: Título A | https://a]\ncorpo A\n\n[FONTE: Título B | https://b]\ncorpo B"
+            "FONTE: [Título A](https://a)\ncorpo A\n\nFONTE: [Título B](https://b)\ncorpo B"
         )
 
     def test_titulo_e_url_ausentes(self):
-        assert _fontes([(None, None, "corpo")]) == "[FONTE: Sem título | ]\ncorpo"
+        assert _fontes([(None, None, "corpo")]) == "FONTE: [Sem título]()\ncorpo"
 
     def test_corpo_vazio_nao_deixa_quebra_no_fim(self):
-        assert _fontes([("T", "u", "")]) == "[FONTE: T | u]"
+        assert _fontes([("T", "u", "")]) == "FONTE: [T](u)"
 
 
 class TestSafeTool:
@@ -80,7 +80,7 @@ class TestBuscarProjetosSemelhantes:
         ]
         monkeypatch.setattr(tools.queries, "find_similar_projects_by_keyword", lambda kws: rows)
         out = buscar_projetos_semelhantes.invoke({"palavras_chave": ["a"]})
-        assert out == "[FONTE: Projeto P | https://p]\nTemas em comum: a, b (aderência: 2)"
+        assert out == "FONTE: [Projeto P](https://p)\nTemas em comum: a, b (aderência: 2)"
 
     def test_erro_de_banco(self, monkeypatch):
         def falha(kws):
@@ -100,7 +100,7 @@ class TestArtigosDoAutor:
     def test_lista_um_bloco_por_artigo(self, monkeypatch):
         rows = [
             {
-                "autor": "Laura Jurgina",
+                "autor": "Ana Beatriz",
                 "artigos": [
                     {"titulo": "Artigo 1", "url": "https://1"},
                     {"titulo": "Artigo 2", "url": "https://2"},
@@ -108,10 +108,10 @@ class TestArtigosDoAutor:
             }
         ]
         monkeypatch.setattr(tools.queries, "find_author_works", lambda nome: rows)
-        out = artigos_do_autor.invoke({"nome": "Laura"})
-        assert out.count("[FONTE:") == 2
-        assert "Autor(a): Laura Jurgina" in out
-        assert "[FONTE: Artigo 2 | https://2]" in out
+        out = artigos_do_autor.invoke({"nome": "Ana"})
+        assert out.count("FONTE: [") == 2
+        assert "Autor(a): Ana Beatriz" in out
+        assert "FONTE: [Artigo 2](https://2)" in out
 
 
 class TestAutoresDoArtigo:
@@ -124,7 +124,7 @@ class TestAutoresDoArtigo:
         rows = [{"titulo": "Artigo 1", "url": "https://1", "autores": ["Ana", "Bia"]}]
         monkeypatch.setattr(tools.queries, "find_articles_by_title", lambda t: rows)
         out = autores_do_artigo.invoke({"titulo": "Artigo"})
-        assert out == "[FONTE: Artigo 1 | https://1]\nAutores: Ana, Bia"
+        assert out == "FONTE: [Artigo 1](https://1)\nAutores: Ana, Bia"
 
 
 def test_conjunto_de_ferramentas_do_pesquisador():

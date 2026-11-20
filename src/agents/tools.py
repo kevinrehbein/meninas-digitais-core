@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 def _fontes(itens: list[tuple[str | None, str | None, str]]) -> str:
     """Bloco [FONTE: título | url] por item (formato que o writer/verifier esperam)."""
     return "\n\n".join(
-        f"[FONTE: {titulo or 'Sem título'} | {url or ''}]\n{corpo}".rstrip()
+        f"FONTE: [{titulo or 'Sem título'}]({url or ''})\n{corpo}".rstrip()
         for titulo, url, corpo in itens
     )
 

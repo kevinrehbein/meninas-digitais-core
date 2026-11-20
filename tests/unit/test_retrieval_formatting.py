@@ -40,7 +40,7 @@ def test_formatar_chunk():
 
     result = HybridRetriever.formatar_chunk(chunk)
 
-    assert "[FONTE: Artigo sobre computação" in result
+    assert "FONTE: [Artigo sobre computação" in result
     assert "https://exemplo.com/artigo" in result
     assert "Conteúdo do artigo." in result
 
@@ -50,7 +50,7 @@ def test_formatar_chunk_sem_metadados():
 
     result = HybridRetriever.formatar_chunk(chunk)
 
-    assert "[FONTE: Sem título | ]" in result
+    assert "FONTE: [Sem título]()" in result
     assert "Conteúdo sem metadados." in result
 
 
@@ -123,7 +123,7 @@ def test_formatar_relacoes_com_entidades_e_fontes():
     assert "=== ENTIDADES ===" in result
     assert "=== RELAÇÕES (TRIPLAS) ===" in result
     assert "(Python) -[UTILIZADO_POR]-> (Meninas Digitais)" in result
-    assert "[FONTE: Artigo de referência | https://wit.example/referencia]" in result
+    assert "FONTE: [Artigo de referência](https://wit.example/referencia)" in result
 
 def test_formatar_relacoes_fonte_sem_url():
     relacoes = [
@@ -136,4 +136,4 @@ def test_formatar_relacoes_fonte_sem_url():
     result = HybridRetriever._formatar_relacoes(
         [], relacoes, {("1", "2"): [("Artigo X", None)]}
     )
-    assert "[FONTE: Artigo X | ]" in result
+    assert "FONTE: [Artigo X]()" in result

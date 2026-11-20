@@ -167,7 +167,7 @@ class HybridRetriever:
     def _formatar_fonte(titulo: str | None, url: str | None) -> str:
         titulo = (titulo or "Sem título").replace("[", "(").replace("]", ")")
         if not url:
-            return f"[FONTE SEM LINK: {titulo}]"
+            return f"FONTE: [{titulo}]()"
         # parênteses na URL quebram o link Markdown
         url = url.strip().replace("(", "%28").replace(")", "%29").replace(" ", "%20")
         return f"FONTE: [{titulo}]({url})"

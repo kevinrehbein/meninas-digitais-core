@@ -202,7 +202,7 @@ class TestPlanoDeProjeto:
         assert result["verdict"] == "aprovado"
         assert result["final_response"] == bom.model_dump()
         assert "Metodologia com menos de 4 etapas." in fake_llms.prompts["ProjectPlan"][1]
-        assert "[FONTE: Projeto P | https://wit.example/p]" in fake_llms.prompts["ProjectPlan"][0]
+        assert "FONTE: [Projeto P](https://wit.example/p)" in fake_llms.prompts["ProjectPlan"][0]
         assert format_final_response(result["final_response"]).startswith(f"# {bom.title}")
         fake_llms.assert_exhausted()
 

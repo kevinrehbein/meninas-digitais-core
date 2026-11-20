@@ -70,7 +70,7 @@ def test_recuperar_contexto_com_neo4j_e_embeddings_reais(retriever):
             maxsplit=1,
         )[1]
 
-        assert "[FONTE:" in trecho_chunks
+        assert "FONTE: [" in trecho_chunks
         assert trecho_chunks.strip()
 
     if tem_grafo:
