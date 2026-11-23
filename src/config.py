@@ -31,7 +31,7 @@ MAX_TOOL_CALLS = 3  # ferramentas chamadas em paralelo por rodada
 
 GRAPH_RECURSION_LIMIT = 100
 MAX_QUESTION_CHARS = 2000
-EVIDENCE_CHAR_LIMIT = 90000  # teto de evidências enviadas ao LLM (custo/latência)
+EVIDENCE_CHAR_LIMIT = 100000  # teto de evidências enviadas ao LLM (custo/latência)
 TOOL_ERROR = "Erro ao consultar a base do WIT. Tente reformular a busca."
 WRITER_TEMPERATURE = 0.3
 
