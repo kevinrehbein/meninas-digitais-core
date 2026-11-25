@@ -23,8 +23,10 @@ from ragas.testset.transforms import apply_transforms, default_transforms
 from ingestion.chunking import chunks
 from retrieval.embedding_model import get_embeddings
 
-GRAFO_PATH = Path("grafo_ragas_500.json")
-PROMPTS_DIR = Path("ragas_prompts_pt")
+EVAL_DIR = Path(__file__).resolve().parent
+GRAFO_PATH = EVAL_DIR / "grafo_ragas_500.json"
+PROMPTS_DIR = EVAL_DIR / "ragas_prompts_pt"
+CSV_PATH = EVAL_DIR / "dataset_sintetico_ragas.csv"
 
 # Amostra exata de 500 chunks
 random.seed(13)
@@ -147,7 +149,7 @@ def main():
     assert isinstance(dataset, Testset)
 
     df = dataset.to_pandas()
-    df.to_csv("dataset_sintetico_ragas.csv", index=False)
+    df.to_csv(CSV_PATH, index=False)
     print(f"Finalizado! {len(df)} perguntas salvas em dataset_sintetico_ragas.csv")
 
 
