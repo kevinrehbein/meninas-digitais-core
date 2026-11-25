@@ -22,6 +22,10 @@ from ragas.testset.transforms import apply_transforms, default_transforms
 
 from ingestion.chunking import chunks
 from retrieval.embedding_model import get_embeddings
+import logging
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
+logging.getLogger("ragas").setLevel(logging.INFO)
 
 EVAL_DIR = Path(__file__).resolve().parent
 GRAFO_PATH = EVAL_DIR / "grafo_ragas_500.json"
@@ -50,19 +54,6 @@ run_config = RunConfig(
     max_wait=30,
     max_workers=2,
 )
-
-
-async def adaptar_transforms_pt(transforms, llm):
-    PROMPTS_DIR.mkdir(exist_ok=True)
-    for i, t in enumerate(transforms):
-        if isinstance(t, PromptMixin):
-            t_file = PROMPTS_DIR / f"transform_{i}_{t.__class__.__name__}.json"
-            if t_file.exists():
-                t.load_prompts(str(t_file))
-            else:
-                prompts = await t.adapt_prompts("portuguese", llm=llm)
-                t.set_prompts(**prompts)
-                t.save_prompts(str(t_file))
 
 
 # Constrói e salva o KnowledgeGraph
@@ -103,9 +94,22 @@ def criar_grafo() -> KnowledgeGraph:
     return kg
 
 
-# Adaptar prompts para PT-BR (com cache em disco) e gerar perguntas
+async def adaptar_transforms_pt(transforms, llm):
+    PROMPTS_DIR.mkdir(parents=True, exist_ok=True)
+    for i, t in enumerate(transforms):
+        if isinstance(t, PromptMixin):
+            t_dir = PROMPTS_DIR / f"transform_{i}_{t.__class__.__name__}"
+            if t_dir.exists() and any(t_dir.iterdir()):
+                t.load_prompts(str(t_dir))
+            else:
+                t_dir.mkdir(parents=True, exist_ok=True)
+                prompts = await t.adapt_prompts("portuguese", llm=llm)
+                t.set_prompts(**prompts)
+                t.save_prompts(str(t_dir))
+
+
 async def obter_distribuicao_pt(llm):
-    PROMPTS_DIR.mkdir(exist_ok=True)
+    PROMPTS_DIR.mkdir(parents=True, exist_ok=True)
     synthesizers = [
         SingleHopSpecificQuerySynthesizer(llm=llm),
         MultiHopSpecificQuerySynthesizer(llm=llm),
@@ -114,13 +118,14 @@ async def obter_distribuicao_pt(llm):
     nomes = ["single_specific", "multi_specific", "multi_abstract"]
 
     for synth, nome in zip(synthesizers, nomes):
-        prompt_file = PROMPTS_DIR / f"{nome}.json"
-        if prompt_file.exists():
-            synth.load_prompts(str(prompt_file))
+        s_dir = PROMPTS_DIR / nome
+        if s_dir.exists() and any(s_dir.iterdir()):
+            synth.load_prompts(str(s_dir))
         else:
+            s_dir.mkdir(parents=True, exist_ok=True)
             prompts = await synth.adapt_prompts("portuguese", llm=llm)
             synth.set_prompts(**prompts)
-            synth.save_prompts(str(prompt_file))
+            synth.save_prompts(str(s_dir))
 
     return [
         (synthesizers[0], 0.50),
