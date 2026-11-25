@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import random
 from pathlib import Path
 
@@ -18,11 +19,17 @@ from ragas.testset.synthesizers.multi_hop.specific import (
 from ragas.testset.synthesizers.single_hop.specific import (
     SingleHopSpecificQuerySynthesizer,
 )
-from ragas.testset.transforms import apply_transforms, default_transforms
+from ragas.testset.transforms import (
+    CosineSimilarityBuilder,
+    EmbeddingExtractor,
+    OverlapScoreBuilder,
+    SummaryExtractor,
+    apply_transforms,
+)
+from ragas.testset.transforms.extractors.llm_based import NERExtractor, ThemesExtractor
 
 from ingestion.chunking import chunks
 from retrieval.embedding_model import get_embeddings
-import logging
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
 logging.getLogger("ragas").setLevel(logging.INFO)
@@ -32,9 +39,10 @@ GRAFO_PATH = EVAL_DIR / "grafo_ragas_500.json"
 PROMPTS_DIR = EVAL_DIR / "ragas_prompts_pt"
 CSV_PATH = EVAL_DIR / "dataset_sintetico_ragas.csv"
 
-# Amostra exata de 500 chunks
+# Amostra exata de 500 chunks substanciais
 random.seed(13)
-docs_amostrados = random.sample(chunks, 500)
+chunks_validos = [c for c in chunks if len(c.page_content.strip()) > 300]
+docs_amostrados = random.sample(chunks_validos, 500)
 
 # Configuração Local (Ollama + Space BGE-M3)
 ollama_llm = ChatOllama(
@@ -66,23 +74,43 @@ def criar_grafo() -> KnowledgeGraph:
     generator_embeddings.embed_query("ping")
 
     print("Construindo grafo a partir dos 500 chunks...")
-    kg = KnowledgeGraph()
-    for doc in docs_amostrados:
-        kg.nodes.append(
+    kg = KnowledgeGraph(
+        nodes=[
             Node(
-                type=NodeType.DOCUMENT,
+                type=NodeType.CHUNK,
                 properties={
                     "page_content": doc.page_content,
                     "document_metadata": doc.metadata,
                 },
             )
-        )
-
-    transforms = default_transforms(
-        documents=docs_amostrados,
-        llm=generator_llm,
-        embedding_model=generator_embeddings,
+            for doc in docs_amostrados
+        ]
     )
+
+    transforms = [
+        SummaryExtractor(llm=generator_llm),
+        NERExtractor(llm=generator_llm),
+        ThemesExtractor(llm=generator_llm),
+        EmbeddingExtractor(
+            embedding_model=generator_embeddings,
+            property_name="summary",
+            embed_property_name="embedding",
+        ),
+        CosineSimilarityBuilder(
+            property_name="embedding",
+            new_property_name="summary_similarity",
+            threshold=0.7,
+        ),
+        OverlapScoreBuilder(
+            property_name="entities",
+            threshold=0.01,
+        ),
+        OverlapScoreBuilder(
+            property_name="themes",
+            new_property_name="themes_overlap",
+            threshold=0.01,
+        ),
+    ]
     asyncio.run(adaptar_transforms_pt(transforms, generator_llm))
 
     apply_transforms(kg, transforms, run_config=run_config)
@@ -155,7 +183,7 @@ def main():
 
     df = dataset.to_pandas()
     df.to_csv(CSV_PATH, index=False)
-    print(f"Finalizado! {len(df)} perguntas salvas em dataset_sintetico_ragas.csv")
+    print(f"Finalizado! {len(df)} perguntas salvas em {CSV_PATH}")
 
 
 if __name__ == "__main__":
