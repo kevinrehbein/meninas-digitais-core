@@ -69,7 +69,7 @@ personas = [
 def make_llm():
     return LangchainLLMWrapper(
         ChatOllama(
-            model="gpt-oss:20b",
+            model="phi4",
             temperature=0,
             num_ctx=16384,
             num_predict=4096,
