@@ -10,6 +10,17 @@ from ragas.run_config import RunConfig
 from ragas.testset import TestsetGenerator
 from ragas.testset.persona import Persona
 from ragas.testset.synthesizers import default_query_distribution
+from ragas.testset.transforms.extractors import EmbeddingExtractor
+from ragas.testset.transforms.extractors.llm_based import (
+    NERExtractor,
+    SummaryExtractor,
+    ThemesExtractor,
+)
+from ragas.testset.transforms.filters import CustomNodeFilter
+from ragas.testset.transforms.relationship_builders import (
+    CosineSimilarityBuilder,
+    OverlapScoreBuilder,
+)
 
 from ingestion.chunking import chunks
 from retrieval.embedding_model import get_embeddings
@@ -18,42 +29,57 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
 logging.getLogger("ragas").setLevel(logging.INFO)
 
 EVAL_DIR = Path(__file__).resolve().parent
-PROMPTS_DIR = EVAL_DIR / "ragas_prompts_pt"
 CSV_PATH = EVAL_DIR / "dataset_sintetico_ragas.csv"
 
 personas_pt = [
     Persona(
-        name="Pesquisadora de Computação",
+        name="Researcher",
         role_description="Pesquisadora acadêmica interessada em diversidade de gênero e projetos de extensão na área de Computação e Tecnologia no Brasil.",
     ),
     Persona(
-        name="Coordenadora de Projeto",
+        name="Project Coordinator",
         role_description="Professora universitária que coordena iniciativas do Programa Meninas Digitais e busca métricas, metodologias e resultados de ações educativas.",
     ),
     Persona(
-        name="Estudante de Graduação",
+        name="Student",
         role_description="Aluna de graduação em Tecnologia da Informação interessada em oportunidades, eventos como o WIT e programas de incentivo feminino na área.",
     ),
 ]
 
+async def build_transforms_pt(llm, emb):
+    # 1. Extratores baseados em LLM (adaptados para português)
+    summary_extractor = SummaryExtractor(llm=llm)
+    themes_extractor = ThemesExtractor(llm=llm)
+    ner_extractor = NERExtractor(llm=llm)
 
-async def preparar_distribuicao_pt(llm):
-    query_distribution = default_query_distribution(llm)
+    for extractor in (summary_extractor, themes_extractor, ner_extractor):
+        prompts = await extractor.adapt_prompts("portuguese", llm=llm)
+        extractor.set_prompts(**prompts)
 
-    for i, (query, _) in enumerate(query_distribution):
-        pasta_sint = PROMPTS_DIR / f"sintetizador_{i}_{query.__class__.__name__}"
+    # 2. Demais transforms com parâmetros padrão
+    node_filter = CustomNodeFilter(llm=llm)
+    embedding_extractor = EmbeddingExtractor(embedding_model=emb)
+    cosine_builder = CosineSimilarityBuilder()
+    overlap_builder = OverlapScoreBuilder(property_name="entities")
 
-        if pasta_sint.exists() and any(pasta_sint.iterdir()):
-            prompts = query.load_prompts(str(pasta_sint))
-        else:
-            pasta_sint.mkdir(parents=True, exist_ok=True)
-            prompts = await query.adapt_prompts("portuguese", llm=llm)
-            query.save_prompts(str(pasta_sint))
+    return [
+        summary_extractor,
+        node_filter,
+        embedding_extractor,
+        themes_extractor,
+        ner_extractor,
+        cosine_builder,
+        overlap_builder,
+    ]
 
+async def translate_distribuition(llm):
+    distribution = default_query_distribution(llm)
+
+    for query, _ in distribution:
+        prompts = await query.adapt_prompts("portuguese", llm=llm)
         query.set_prompts(**prompts)
 
-    return query_distribution
-
+    return distribution
 
 def main():
     random.seed(13)
@@ -73,7 +99,8 @@ def main():
     emb.embed_query("ping")
 
     run_config = RunConfig(timeout=300, max_retries=5, max_wait=30, max_workers=4)
-    query_distribution = asyncio.run(preparar_distribuicao_pt(llm))
+    query_distribution = asyncio.run(translate_distribuition(llm))
+    transforms_pt = asyncio.run(build_transforms_pt(llm, emb))
 
     generator = TestsetGenerator(
         llm=llm,
@@ -84,6 +111,7 @@ def main():
     testset = generator.generate_with_chunks(
         chunks=docs_amostrados,
         testset_size=5,
+        transforms=transforms_pt,
         query_distribution=query_distribution,
         run_config=run_config,
         raise_exceptions=False,
