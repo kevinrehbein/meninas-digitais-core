@@ -74,6 +74,7 @@ def make_llm():
             num_ctx=16384,
             num_predict=4096,
             reasoning="low",
+            format="json"
         )
     )
 
