@@ -73,8 +73,6 @@ def make_llm():
             temperature=0,
             num_ctx=16384,
             num_predict=4096,
-            reasoning="low",
-            format="json"
         )
     )
 
