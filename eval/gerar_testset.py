@@ -114,7 +114,7 @@ def main():
         transforms=transforms_pt,
         query_distribution=query_distribution,
         run_config=run_config,
-        raise_exceptions=False,
+        raise_exceptions=True,
     )
 
     df = testset.to_pandas()
