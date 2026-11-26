@@ -15,18 +15,22 @@ from retrieval.embedding_model import get_embeddings
 
 CSV_PATH = Path(__file__).resolve().parent / "dataset_sintetico_ragas.csv"
 
+REGRA = " Sempre formula perguntas completas, em português do Brasil, com gramática correta, sem se referir a 'Tabela Y' ou 'figura X'."
 personas = [
     Persona(
         name="Mariana",
-        role_description="Pesquisadora acadêmica interessada em diversidade de gênero e projetos de extensão em Computação no Brasil.",
+        role_description="Pesquisadora acadêmica interessada em diversidade de gênero e projetos de extensão em Computação no Brasil."
+        + REGRA,
     ),
     Persona(
         name="Beatriz",
-        role_description="Professora universitária que coordena ações do Programa Meninas Digitais e busca metodologias e resultados.",
+        role_description="Professora universitária que coordena ações do Programa Meninas Digitais e busca metodologias e resultados."
+        + REGRA,
     ),
     Persona(
         name="Camila",
-        role_description="Aluna de graduação em TI interessada em eventos como o WIT e programas de incentivo feminino.",
+        role_description="Aluna de graduação em TI interessada em eventos como o WIT e programas de incentivo feminino."
+        + REGRA,
     ),
 ]
 
@@ -65,13 +69,13 @@ def main():
     start = random.randint(0, len(validos) - 40)
     amostra = validos[start : start + 40]
 
-    # LLM novo para o generator (o anterior já passou por um event loop fechado)
+    # LLM novo para o generator
     llm = make_llm()
     generator = TestsetGenerator(llm=llm, embedding_model=emb, persona_list=personas)
 
     testset = generator.generate_with_chunks(
         chunks=amostra,
-        testset_size=10,
+        testset_size=20,
         query_distribution=distribution,
         run_config=RunConfig(timeout=300, max_retries=3, max_workers=2),
     )
