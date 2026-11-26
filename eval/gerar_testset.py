@@ -23,8 +23,8 @@ from ingestion.chunking import chunks
 from retrieval.embedding_model import get_embeddings
 
 SEED = 13
-N_CHUNKS = 50
-TESTSET_SIZE = 10
+N_CHUNKS = 500
+TESTSET_SIZE = 100
 
 BASE_DIR = Path(__file__).resolve().parent
 CSV_PATH = BASE_DIR / f"dataset_sintetico_ragas_seed{SEED}.csv"
@@ -46,7 +46,7 @@ def _getitem_seguro(self, key):
 
 PersonaList.__getitem__ = _getitem_seguro
 
-REGRA = " Sempre formula perguntas completas, em português do Brasil, com gramática correta, sem se referir a 'Tabela Y' ou 'figura X'."
+REGRA = " Sempre formula perguntas completas, em português do Brasil, com gramática correta, sem abordar Tabelas ou Figuras."
 personas = [
     Persona(
         name="Pesquisadora",
