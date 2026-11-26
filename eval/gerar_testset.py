@@ -33,15 +33,15 @@ CSV_PATH = EVAL_DIR / "dataset_sintetico_ragas.csv"
 
 personas_pt = [
     Persona(
-        name="Researcher",
+        name="Mariana Silva",
         role_description="Pesquisadora acadêmica interessada em diversidade de gênero e projetos de extensão na área de Computação e Tecnologia no Brasil.",
     ),
     Persona(
-        name="Project Coordinator",
+        name="Beatriz Costa",
         role_description="Professora universitária que coordena iniciativas do Programa Meninas Digitais e busca métricas, metodologias e resultados de ações educativas.",
     ),
     Persona(
-        name="Student",
+        name="Camila Oliveira",
         role_description="Aluna de graduação em Tecnologia da Informação interessada em oportunidades, eventos como o WIT e programas de incentivo feminino na área.",
     ),
 ]
