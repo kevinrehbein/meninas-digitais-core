@@ -8,7 +8,15 @@ from ragas.llms import LangchainLLMWrapper
 from ragas.run_config import RunConfig
 from ragas.testset import TestsetGenerator
 from ragas.testset.persona import Persona
-from ragas.testset.synthesizers import default_query_distribution
+from ragas.testset.synthesizers.multi_hop.abstract import (
+    MultiHopAbstractQuerySynthesizer,
+)
+from ragas.testset.synthesizers.multi_hop.specific import (
+    MultiHopSpecificQuerySynthesizer,
+)
+from ragas.testset.synthesizers.single_hop.specific import (
+    SingleHopSpecificQuerySynthesizer,
+)
 
 from ingestion.chunking import chunks
 from retrieval.embedding_model import get_embeddings
@@ -36,7 +44,7 @@ personas = [
 
 
 def make_llm():
-    # sem format="json": o Ragas já cuida do parsing estruturado
+
     return LangchainLLMWrapper(
         ChatOllama(
             model="gpt-oss:20b",
@@ -49,7 +57,11 @@ def make_llm():
 
 
 async def adapt_to_portuguese(llm):
-    distribution = default_query_distribution(llm)  # single-hop + multi-hop
+    distribution = [
+        (SingleHopSpecificQuerySynthesizer(llm=llm), 0.5),
+        (MultiHopAbstractQuerySynthesizer(llm=llm), 0.2),
+        (MultiHopSpecificQuerySynthesizer(llm=llm), 0.3),
+    ]
     for synth, _ in distribution:
         prompts = await synth.adapt_prompts("portuguese", llm=llm)
         synth.set_prompts(**prompts)
@@ -60,14 +72,15 @@ def main():
     random.seed(13)
     emb = LangchainEmbeddingsWrapper(get_embeddings())
 
-    # UM único asyncio.run, com um LLM só para a adaptação
     llm_adapt = make_llm()
     distribution = asyncio.run(adapt_to_portuguese(llm_adapt))
 
-    # chunks vizinhos aumentam a chance de existirem relacionamentos (multi-hop)
     validos = [c for c in chunks if len(c.page_content.strip()) > 300]
-    start = random.randint(0, len(validos) - 40)
-    amostra = validos[start : start + 40]
+
+    # chunks aleatórios espalhados por todo o corpus
+    N_CHUNKS = 500
+    amostra = random.sample(validos, min(N_CHUNKS, len(validos)))
+    print(f"Chunks na amostra: {len(amostra)}")
 
     # LLM novo para o generator
     llm = make_llm()
@@ -75,7 +88,7 @@ def main():
 
     testset = generator.generate_with_chunks(
         chunks=amostra,
-        testset_size=20,
+        testset_size=100,
         query_distribution=distribution,
         run_config=RunConfig(timeout=300, max_retries=3, max_workers=2),
     )
