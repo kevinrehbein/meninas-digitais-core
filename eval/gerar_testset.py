@@ -71,7 +71,7 @@ def make_llm():
         ChatOllama(
             model="phi4",
             temperature=0,
-            num_ctx=16384,
+            num_ctx=8192,
             num_predict=4096,
         )
     )
