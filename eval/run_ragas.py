@@ -24,6 +24,7 @@ from ragas.metrics.collections import (
     AnswerRelevancy,
     ContextRelevance,
     ContextUtilization,
+    ContextRecall,
     Faithfulness,
 )
 
@@ -46,6 +47,7 @@ METRICAS = [
     "answer_relevancy",
     "context_relevance",
     "context_utilization",
+    "context_recall"
 ]
 
 PROMPT = """Você é um assistente do Programa Meninas Digitais.
@@ -194,9 +196,9 @@ class RagasEmbAdapter(BaseRagasEmbedding):
         return await self.lc_emb.aembed_query(text)
 
 
-def avaliar(loop, metricas, pergunta, resposta, contextos):
+def avaliar(loop, metricas, pergunta, resposta, contextos, referencia):
     """Roda cada métrica isoladamente; uma falha não derruba as demais."""
-    f, ar, cr, cu = metricas
+    f, ar, cr, cu, rec = metricas
     chamadas = {
         "faithfulness": lambda: f.ascore(
             user_input=pergunta, response=resposta, retrieved_contexts=contextos
@@ -207,6 +209,9 @@ def avaliar(loop, metricas, pergunta, resposta, contextos):
         ),
         "context_utilization": lambda: cu.ascore(
             user_input=pergunta, response=resposta, retrieved_contexts=contextos
+        ),
+        "context_recall": lambda: rec.ascore(
+            user_input=pergunta, retrieved_contexts=contextos, reference=referencia
         ),
     }
     out = {}
@@ -245,7 +250,10 @@ def fase_avaliar(emb):
         AnswerRelevancy(llm=judge_llm, embeddings=RagasEmbAdapter(emb)),
         ContextRelevance(llm=judge_llm),
         ContextUtilization(llm=judge_llm),
+        ContextRecall(llm=judge_llm)
     ]
+
+    refs = {str(q["id"]): q["reference"] for q in carregar_perguntas(0)}
 
     res_consolidados = {}
 
@@ -283,7 +291,7 @@ def fase_avaliar(emb):
             contextos = json.loads(row["contextos"])
             print(f"ID {q_id} -> avaliando no juiz...", flush=True)
             notas = avaliar(
-                loop, metricas, row["user_input"], row["response"], contextos
+                loop, metricas, row["user_input"], row["response"], contextos, refs[q_id]
             )
 
             linha = pd.DataFrame(
