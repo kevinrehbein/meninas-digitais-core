@@ -21,7 +21,7 @@ from src.config import GRAPH_RECURSION_LIMIT, validate_config
 from src.retrieval.hybrid import HybridRetriever
 
 PERGUNTAS_PATH = Path(__file__).resolve().parent / "perguntas.jsonl"
-
+RESULTADOS_PATH = Path(__file__).resolve().parent / "trulens_resultados.csv"
 APP_VERSION = "v1"
 
 RETRIEVAL = SpanAttributes.SpanType.RETRIEVAL
@@ -77,10 +77,10 @@ class MeninasDigitaisApp:
 # -------------------------------------------------------------------- MÉTRICAS
 judge = Langchain(
     chain=ChatOllama(
-        model="qwen3.5:9b",
+        model="qwen3.8:27b",
         reasoning=False,
         temperature=0,
-        num_ctx=16384,
+        num_ctx=24576,
         base_url="http://localhost:11434",
     )
 )
@@ -147,7 +147,10 @@ def main() -> None:
 
     ids = [r.record_id for r in recording.records]
     print("Aguardando a conclusão das avaliações...")
-    print(tru.retrieve_feedback_results(record_ids=ids, timeout=300))
+
+    res = tru.retrieve_feedback_results(record_ids=ids, timeout=360)
+    print(res)
+    res.to_csv(RESULTADOS_PATH, index=False)
 
     run_dashboard(session)
 
