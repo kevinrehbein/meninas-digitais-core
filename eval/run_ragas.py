@@ -259,7 +259,7 @@ def fase_avaliar(emb):
         provider="openai",
         client=client,
         temperature=JUDGE_TEMP,
-        max_tokens=8192,          # 32768 pode estourar o limite do provedor/seu crédito
+        max_tokens=32768,          # 32768 pode estourar o limite do provedor/seu crédito
         extra_body={
             "provider": {
                 "only": [
@@ -268,7 +268,7 @@ def fase_avaliar(emb):
                 "allow_fallbacks": False
             },
             "reasoning": {
-                "enabled": True
+                "enabled": False
             }
         }
     )
