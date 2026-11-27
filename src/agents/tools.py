@@ -1,14 +1,40 @@
 import functools
 import logging
-from typing import Literal
+from contextvars import ContextVar
+from typing import Any
 
 from langchain_core.tools import BaseTool, tool
+from trulens.core.otel.instrument import instrument
+from trulens.otel.semconv.trace import SpanAttributes
 
 from config import TOOL_ERROR
 from retrieval import queries
 from retrieval.hybrid import HybridRetriever
 
 logger = logging.getLogger(__name__)
+
+# Pergunta original da execução atual. É definida em MeninasDigitaisApp.ask()
+# e lida pela instrumentação de cada ferramenta chamada pelo ToolNode.
+USER_QUERY: ContextVar[str] = ContextVar("trulens_user_query", default="")
+
+RETRIEVAL = SpanAttributes.SpanType.RETRIEVAL
+QUERY = SpanAttributes.RETRIEVAL.QUERY_TEXT
+CONTEXTS = SpanAttributes.RETRIEVAL.RETRIEVED_CONTEXTS
+
+def _retrieval_attributes(ret: Any, exception: Exception | None, *args, **kwargs) -> dict:
+    """Anexa a pergunta original e o retorno da ferramenta ao span de retrieval.
+
+    Não usa os argumentos da ferramenta como QUERY: eles podem ser reformulações
+    ou decomposições produzidas pelo agente, e não a pergunta feita pelo usuário.
+    """
+    contexts = []
+    if exception is None and ret and ret != TOOL_ERROR:
+        contexts = [str(ret)]
+
+    return {
+        QUERY: USER_QUERY.get(),
+        CONTEXTS: contexts,
+    }
 
 def _fontes(itens: list[tuple[str | None, str | None, str]]) -> str:
     """Bloco [FONTE: título | url] por item (formato que o writer/verifier esperam)."""
@@ -32,6 +58,7 @@ def _safe_tool(func):
 
 
 @tool
+@instrument(span_type=RETRIEVAL, attributes=_retrieval_attributes)
 @_safe_tool
 def pesquisar_contexto_wit(pergunta: str, listar_artigos: bool = False) -> str:
     """
@@ -50,6 +77,7 @@ def pesquisar_contexto_wit(pergunta: str, listar_artigos: bool = False) -> str:
 
 
 @tool
+@instrument(span_type=RETRIEVAL, attributes=_retrieval_attributes)
 @_safe_tool
 def buscar_projetos_semelhantes(palavras_chave: list[str]) -> str:
     """
@@ -70,6 +98,7 @@ def buscar_projetos_semelhantes(palavras_chave: list[str]) -> str:
 
 
 @tool
+@instrument(span_type=RETRIEVAL, attributes=_retrieval_attributes)
 @_safe_tool
 def artigos_do_autor(nome: str) -> str:
     """
@@ -95,6 +124,7 @@ def artigos_do_autor(nome: str) -> str:
 
 
 @tool
+@instrument(span_type=RETRIEVAL, attributes=_retrieval_attributes)
 @_safe_tool
 def autores_do_artigo(titulo: str) -> str:
     """
