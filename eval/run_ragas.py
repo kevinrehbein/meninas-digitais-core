@@ -228,7 +228,7 @@ def fase_avaliar(emb):
     # Um único event loop: o AsyncOpenAI mantém conexões atreladas ao loop.
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-
+    '''
     client = AsyncOpenAI(
         base_url=f"{OLLAMA_URL}/v1",
         api_key="ollama",
@@ -242,6 +242,33 @@ def fase_avaliar(emb):
         temperature=JUDGE_TEMP,
         max_tokens=32768,
         reasoning_effort="none",  # desliga o thinking do juiz (Ollama)
+    )
+    '''
+    import os  # noqa: PLC0415
+
+    client = AsyncOpenAI(
+        base_url="https://openrouter.ai/api/v1",
+        api_key=os.environ["OPENROUTER_API_KEY"],
+        max_retries=5,  # no OpenRouter vale a pena ter retry (rate limit / 429)
+    )
+
+    judge_llm = llm_factory(
+        model="qwen/qwen3.8-27b",   # confira o slug exato em openrouter.ai/models
+        provider="openai",
+        client=client,
+        temperature=JUDGE_TEMP,
+        max_tokens=8192,          # 32768 pode estourar o limite do provedor/seu crédito
+        extra_body={
+            "provider": {
+                "only": [
+                    "streamlake"
+                ],
+                "allow_fallbacks": False
+            },
+            "reasoning": {
+                "enabled": True
+            }
+        }
     )
 
     emb.embed_query("ping")
