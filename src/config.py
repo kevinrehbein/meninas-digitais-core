@@ -42,22 +42,16 @@ EMBEDDING_SPACE = os.getenv("EMBEDDING_SPACE")
 LLM_CHAIN: list[tuple[str, str]] = [
     ("google_genai", "gemini-3.5-flash-lite"),
     ("google_genai", "gemini-3.1-flash-lite"),
-    ("google_genai", "gemini-2.5-flash-lite"),
     ("google_genai", "gemma-4-26b-a4b-it"),
     ("google_genai", "gemma-4-31b-it"),
     ("google_genai", "gemini-4-hydrogen"),
     ("google_genai", "gemini-3.8-flash"),
     ("google_genai", "gemini-3.6-flash"),
     ("google_genai", "gemini-3-flash-preview"),
-    ("google_genai", "gemini-2.5-flash"),
-    ("groq", "qwen/qwen3.8-27b"),
-    ("groq", "openai/gpt-oss-20b"),
-    ("groq", "openai/gpt-oss-120b"),
 ]
 
 PROVIDER_API_KEYS: dict[str, str] = {
     "google_genai": "GOOGLE_API_KEY",
-    "groq": "GROQ_API_KEY",
 }
 
 

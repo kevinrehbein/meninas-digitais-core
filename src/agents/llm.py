@@ -56,7 +56,7 @@ def _compose(
     primary, *fallbacks = runnables
     chain = primary.with_fallbacks(fallbacks) if fallbacks else primary
     return chain.with_retry(
-        stop_after_attempt=3,
+        stop_after_attempt=5,
         wait_exponential_jitter=True,
     )
 
