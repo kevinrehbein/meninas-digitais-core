@@ -21,23 +21,15 @@ RETRIEVAL = SpanAttributes.SpanType.RETRIEVAL
 QUERY = SpanAttributes.RETRIEVAL.QUERY_TEXT
 CONTEXTS = SpanAttributes.RETRIEVAL.RETRIEVED_CONTEXTS
 
-def _retrieval_attributes(ret: Any, exception: Exception | None, *args, **kwargs) -> dict:
-    """Anexa a pergunta original e o retorno da ferramenta ao span de retrieval.
-
-    Não usa os argumentos da ferramenta como QUERY: eles podem ser reformulações
-    ou decomposições produzidas pelo agente, e não a pergunta feita pelo usuário.
-    """
-    contexts = []
-    if exception is None and ret and ret != TOOL_ERROR:
-        contexts = [str(ret)]
-
+def _retrieval_attributes(ret, exception, *args, **kwargs) -> dict:
+    falhou = exception is not None or not ret or ret == TOOL_ERROR
     return {
         QUERY: USER_QUERY.get(),
-        CONTEXTS: contexts,
+        CONTEXTS: [""] if falhou else [str(ret)],
     }
 
 def _fontes(itens: list[tuple[str | None, str | None, str]]) -> str:
-    """Bloco [FONTE: título | url] por item (formato que o writer/verifier esperam)."""
+    """Bloco FONTE: [título](url) por item (formato que o writer/verifier esperam)."""
     return "\n\n".join(
         f"FONTE: [{titulo or 'Sem título'}]({url or ''})\n{corpo}".rstrip()
         for titulo, url, corpo in itens

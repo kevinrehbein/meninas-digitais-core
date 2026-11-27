@@ -1,17 +1,17 @@
+import json
 import logging
 import sys
 from pathlib import Path
 
+import numpy as np
+import pandas as pd
+
 ROOT_DIR = Path(__file__).resolve().parents[1]
 SRC_DIR = ROOT_DIR / "src"
 
-for path in (str(ROOT_DIR), str(SRC_DIR)):
-    if path not in sys.path:
-        sys.path.insert(0, path)
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
 
-import json
-
-import numpy as np
 from langchain_ollama import ChatOllama
 from trulens.apps.app import TruApp
 from trulens.core import Metric, Selector, TruSession
@@ -19,23 +19,25 @@ from trulens.core.otel.instrument import instrument
 from trulens.otel.semconv.trace import SpanAttributes
 from trulens.providers.langchain import Langchain
 
-from src.agents.graph import graph_builder
-from src.agents.state import initial_state
-from agents.tools import CONTEXTS, QUERY, RETRIEVAL, USER_QUERY
-from src.agents.utils import format_final_response
-from src.config import GRAPH_RECURSION_LIMIT, validate_config
-from src.retrieval.hybrid import HybridRetriever
+from agents.graph import graph_builder
+from agents.state import initial_state
+from agents.tools import CONTEXTS, RETRIEVAL, USER_QUERY
+from agents.utils import format_final_response
+from config import GRAPH_RECURSION_LIMIT, validate_config
+from retrieval.hybrid import HybridRetriever
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
 logger = logging.getLogger(__name__)
 
 PERGUNTAS_PATH = Path(__file__).resolve().parent / "perguntas.jsonl"
 RESULTADOS_PATH = Path(__file__).resolve().parent / "trulens_resultados.csv"
+FALHAS_PATH = RESULTADOS_PATH.with_name("trulens_falhas.csv")
 APP_VERSION = "v1"
 NUM_PERGUNTAS = 3
-
-RETRIEVAL = SpanAttributes.SpanType.RETRIEVAL
-QUERY = SpanAttributes.RETRIEVAL.QUERY_TEXT
-CONTEXTS = SpanAttributes.RETRIEVAL.RETRIEVED_CONTEXTS
+AVALIACAO_TIMEOUT_S = 3600
 
 
 def carregar_perguntas(limite: int | None = None) -> list[str]:
@@ -58,7 +60,6 @@ class MeninasDigitaisApp:
         },
     )
     def ask(self, pergunta: str) -> str:
-
         token = USER_QUERY.set(pergunta)
         try:
             state = self.graph.invoke(
@@ -74,13 +75,14 @@ class MeninasDigitaisApp:
 def criar_judge() -> Langchain:
     return Langchain(
         chain=ChatOllama(
-            model="qwen3.8:27b",
+            model="qwen3.8:27b",  # confirme com `ollama list`
             reasoning=False,
             temperature=0,
             num_ctx=24576,
             base_url="http://localhost:11434",
         )
     )
+
 
 def criar_metricas(judge: Langchain) -> list[Metric]:
     """Métricas sempre ancoradas na pergunta original do registro."""
@@ -99,7 +101,7 @@ def criar_metricas(judge: Langchain) -> list[Metric]:
         selectors={
             # A pergunta do registro é a pergunta original do usuário.
             "question": Selector.select_record_input(),
-            # cada span de ferramenta fornece seu retorno como contexto.
+            # Cada span de ferramenta fornece seu retorno como contexto.
             "context": Selector(
                 span_type=RETRIEVAL,
                 span_attribute=CONTEXTS,
@@ -127,7 +129,6 @@ def criar_metricas(judge: Langchain) -> list[Metric]:
 
 # ----------------------------------------------------------------------- MAIN
 def main() -> None:
-
     validate_config()
 
     perguntas = carregar_perguntas(NUM_PERGUNTAS)
@@ -150,25 +151,43 @@ def main() -> None:
         feedbacks=criar_metricas(criar_judge()),
     )
 
-    with tru as recording:
-        for indice, pergunta in enumerate(perguntas, start=1):
-            logger.info("Executando pergunta %d/%d", indice, len(perguntas))
-            app.ask(pergunta)
-
-    record_ids = [record.record_id for record in recording.records]
-    if not record_ids:
-        raise RuntimeError("A avaliação terminou sem produzir registros no TruLens.")
-
-    logger.info("Aguardando a conclusão das avaliações...")
-    resultados = tru.retrieve_feedback_results(
-        record_ids=record_ids,
-        timeout=360,
-    )
-
     RESULTADOS_PATH.parent.mkdir(parents=True, exist_ok=True)
-    resultados.to_csv(RESULTADOS_PATH, index=False, encoding="utf-8-sig")
-    logger.info("Resultados salvos em %s", RESULTADOS_PATH)
-    print(resultados.to_string(index=False))
+
+    falhas: list[dict] = []
+    recording = None
+
+    try:
+        with tru as recording:
+            for indice, pergunta in enumerate(perguntas, start=1):
+                logger.info("Executando pergunta %d/%d", indice, len(perguntas))
+                try:
+                    app.ask(pergunta)
+                except Exception as exc:
+                    logger.exception("Falha na pergunta %d", indice)
+                    falhas.append(
+                        {"indice": indice, "pergunta": pergunta, "erro": repr(exc)}
+                    )
+    finally:
+        record_ids = [r.record_id for r in getattr(recording, "records", [])]
+
+        if record_ids:
+            logger.info("Aguardando a conclusão das avaliações...")
+            try:
+                resultados = tru.retrieve_feedback_results(
+                    record_ids=record_ids,
+                    timeout=AVALIACAO_TIMEOUT_S,
+                )
+                resultados.to_csv(RESULTADOS_PATH, index=False, encoding="utf-8-sig")
+                logger.info("Resultados salvos em %s", RESULTADOS_PATH)
+                print(resultados.to_string(index=False))
+            except Exception:
+                logger.exception("Falha ao recuperar avaliações")
+        else:
+            logger.error("Nenhum registro foi produzido no TruLens.")
+
+        if falhas:
+            pd.DataFrame(falhas).to_csv(FALHAS_PATH, index=False, encoding="utf-8-sig")
+            logger.warning("%d pergunta(s) falharam; ver %s", len(falhas), FALHAS_PATH)
 
 
 if __name__ == "__main__":
