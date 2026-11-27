@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import sys
 from pathlib import Path
 
@@ -12,10 +13,11 @@ SRC_DIR = ROOT_DIR / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
-from langchain_ollama import ChatOllama
+from langchain_openai import ChatOpenAI
 from trulens.apps.app import TruApp
 from trulens.core import Metric, Selector, TruSession
 from trulens.core.otel.instrument import instrument
+from trulens.dashboard import run_dashboard
 from trulens.otel.semconv.trace import SpanAttributes
 from trulens.providers.langchain import Langchain
 
@@ -72,6 +74,7 @@ class MeninasDigitaisApp:
 
 
 # -------------------------------------------------------------------- MÉTRICAS
+"""
 def criar_judge() -> Langchain:
     return Langchain(
         chain=ChatOllama(
@@ -80,6 +83,29 @@ def criar_judge() -> Langchain:
             temperature=0,
             num_ctx=24576,
             base_url="http://localhost:11434",
+        )
+    )
+"""
+
+
+def criar_judge() -> Langchain:
+    return Langchain(
+        chain=ChatOpenAI(
+            model="qwen/qwen3.8-27b",
+            base_url="https://openrouter.ai/api/v1",
+            api_key=os.environ["OPENROUTER_API_KEY"],
+            temperature=0,
+            extra_body= {
+                "provider": {
+                    "only": [
+                        "streamlake"
+                    ],
+                    "allow_fallbacks": False
+                },
+                "reasoning": {
+                    "enabled": False
+                }
+            }
         )
     )
 
@@ -140,6 +166,7 @@ def main() -> None:
 
     session = TruSession()
     session.reset_database()  # não preserva histórico anterior
+    run_dashboard(session, port=8501)
 
     app = MeninasDigitaisApp()
 
