@@ -149,10 +149,9 @@ def main() -> None:
     print("Aguardando a conclusão das avaliações...")
 
     res = tru.retrieve_feedback_results(record_ids=ids, timeout=360)
-    print(res)
+    display(res)
     res.to_csv(RESULTADOS_PATH, index=False)
 
-    run_dashboard(session)
 
 
 if __name__ == "__main__":
