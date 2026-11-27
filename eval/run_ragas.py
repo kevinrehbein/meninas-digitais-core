@@ -14,18 +14,18 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # raiz
 
-from dotenv import load_dotenv
 import pandas as pd
 import requests
+from dotenv import load_dotenv
 from langchain.chat_models import init_chat_model
 from openai import AsyncOpenAI
 from ragas.embeddings import BaseRagasEmbedding
 from ragas.llms import llm_factory
 from ragas.metrics.collections import (
     AnswerRelevancy,
+    ContextRecall,
     ContextRelevance,
     ContextUtilization,
-    ContextRecall,
     Faithfulness,
 )
 
@@ -49,7 +49,7 @@ METRICAS = [
     "answer_relevancy",
     "context_relevance",
     "context_utilization",
-    "context_recall"
+    "context_recall",
 ]
 
 PROMPT = """Você é um assistente do Programa Meninas Digitais.
@@ -230,7 +230,7 @@ def fase_avaliar(emb):
     # Um único event loop: o AsyncOpenAI mantém conexões atreladas ao loop.
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-    '''
+
     client = AsyncOpenAI(
         base_url=f"{OLLAMA_URL}/v1",
         api_key="ollama",
@@ -245,33 +245,6 @@ def fase_avaliar(emb):
         max_tokens=32768,
         reasoning_effort="none",  # desliga o thinking do juiz (Ollama)
     )
-    '''
-    import os  # noqa: PLC0415
-
-    client = AsyncOpenAI(
-        base_url="https://openrouter.ai/api/v1",
-        api_key=os.environ["OPENROUTER_API_KEY"],
-        max_retries=5,  # no OpenRouter vale a pena ter retry (rate limit / 429)
-    )
-
-    judge_llm = llm_factory(
-        model="qwen/qwen3.8-27b",   # confira o slug exato em openrouter.ai/models
-        provider="openai",
-        client=client,
-        temperature=JUDGE_TEMP,
-        max_tokens=32768,          # 32768 pode estourar o limite do provedor/seu crédito
-        extra_body={
-            "provider": {
-                "only": [
-                    "streamlake"
-                ],
-                "allow_fallbacks": False
-            },
-            "reasoning": {
-                "enabled": False
-            }
-        }
-    )
 
     emb.embed_query("ping")
     metricas = [
@@ -279,7 +252,7 @@ def fase_avaliar(emb):
         AnswerRelevancy(llm=judge_llm, embeddings=RagasEmbAdapter(emb)),
         ContextRelevance(llm=judge_llm),
         ContextUtilization(llm=judge_llm),
-        ContextRecall(llm=judge_llm)
+        ContextRecall(llm=judge_llm),
     ]
 
     refs = {str(q["id"]): q["reference"] for q in carregar_perguntas(0)}
@@ -320,7 +293,12 @@ def fase_avaliar(emb):
             contextos = json.loads(row["contextos"])
             print(f"ID {q_id} -> avaliando no juiz...", flush=True)
             notas = avaliar(
-                loop, metricas, row["user_input"], row["response"], contextos, refs[q_id]
+                loop,
+                metricas,
+                row["user_input"],
+                row["response"],
+                contextos,
+                refs[q_id],
             )
 
             linha = pd.DataFrame(

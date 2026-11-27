@@ -1,6 +1,5 @@
 import json
 import logging
-import os
 import sys
 from pathlib import Path
 
@@ -13,7 +12,7 @@ SRC_DIR = ROOT_DIR / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
-from langchain_openai import ChatOpenAI
+from langchain_ollama import ChatOllama
 from trulens.apps.app import TruApp
 from trulens.core import Metric, Selector, TruSession
 from trulens.core.otel.instrument import instrument
@@ -45,7 +44,7 @@ AVALIACAO_TIMEOUT_S = 3600
 def carregar_perguntas(limite: int | None = None) -> list[str]:
     with PERGUNTAS_PATH.open(encoding="utf-8") as f:
         perguntas = [json.loads(l)["pergunta"] for l in f if l.strip()]
-    return perguntas[:limite]
+    return perguntas
 
 
 class MeninasDigitaisApp:
@@ -74,7 +73,8 @@ class MeninasDigitaisApp:
 
 
 # -------------------------------------------------------------------- MÉTRICAS
-"""
+
+
 def criar_judge() -> Langchain:
     return Langchain(
         chain=ChatOllama(
@@ -83,29 +83,6 @@ def criar_judge() -> Langchain:
             temperature=0,
             num_ctx=24576,
             base_url="http://localhost:11434",
-        )
-    )
-"""
-
-
-def criar_judge() -> Langchain:
-    return Langchain(
-        chain=ChatOpenAI(
-            model="qwen/qwen3.8-27b",
-            base_url="https://openrouter.ai/api/v1",
-            api_key=os.environ["OPENROUTER_API_KEY"],
-            temperature=0,
-            extra_body= {
-                "provider": {
-                    "only": [
-                        "streamlake"
-                    ],
-                    "allow_fallbacks": False
-                },
-                "reasoning": {
-                    "enabled": False
-                }
-            }
         )
     )
 
@@ -165,7 +142,7 @@ def main() -> None:
     HybridRetriever.get_instance().embedding_model.embed_query("ping")
 
     session = TruSession()
-    session.reset_database()  # não preserva histórico anterior
+    # session.reset_database()  # não preserva histórico anterior
     run_dashboard(session, port=8501)
 
     app = MeninasDigitaisApp()
