@@ -14,6 +14,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))  # raiz
 
+from dotenv import load_dotenv
 import pandas as pd
 import requests
 from langchain.chat_models import init_chat_model
@@ -32,6 +33,7 @@ from src.agents.utils import message_text
 from src.config import validate_config
 from src.retrieval.hybrid import HybridRetriever
 
+load_dotenv()
 ROOT = Path(__file__).resolve().parent
 
 OLLAMA_URL = "http://127.0.0.1:11434"
