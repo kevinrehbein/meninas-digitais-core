@@ -142,7 +142,7 @@ def main() -> None:
     )
 
     with tru as recording:
-        for pergunta in carregar_perguntas():
+        for pergunta in carregar_perguntas(3):
             app.ask(pergunta)
 
     ids = [r.record_id for r in recording.records]
