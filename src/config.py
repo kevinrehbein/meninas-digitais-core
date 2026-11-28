@@ -47,7 +47,6 @@ LLM_CHAIN: list[tuple[str, str]] = [
     ("google_genai", "gemini-4-hydrogen"),
     ("google_genai", "gemini-3.8-flash"),
     ("google_genai", "gemini-3.6-flash"),
-    ("google_genai", "gemini-3-flash-preview"),
 ]
 
 PROVIDER_API_KEYS: dict[str, str] = {

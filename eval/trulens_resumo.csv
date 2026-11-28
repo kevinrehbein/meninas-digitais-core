@@ -1,0 +1,4 @@
+,n_validos,media,desvio,mediana,n_nota_1,pct_nota_1
+Answer Relevance,96,0.851,0.348,1.0,80,83.3
+Context Relevance,95,0.838,0.246,1.0,53,55.8
+Groundedness,95,0.766,0.201,0.778,27,28.4
